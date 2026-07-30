@@ -1,0 +1,3 @@
+package com.company.platform.order.domain;
+import java.math.BigDecimal; import java.util.Currency;
+public record Money(BigDecimal amount,Currency currency){public Money{if(amount==null||currency==null||amount.signum()<0||amount.scale()>4)throw new IllegalArgumentException("invalid money");}public static Money zero(Currency c){return new Money(BigDecimal.ZERO,c);}public Money add(Money b){if(!currency.equals(b.currency()))throw new IllegalArgumentException("currency mismatch");return new Money(amount.add(b.amount()),currency);}public Money multiply(int q){return new Money(amount.multiply(BigDecimal.valueOf(q)),currency);}}

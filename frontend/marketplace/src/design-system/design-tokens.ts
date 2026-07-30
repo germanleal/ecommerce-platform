@@ -1,0 +1,1 @@
+export const designTokens = { colors: { background: '#f8fafc', foreground: '#0f172a', primary: '#4f46e5', muted: '#64748b', surface: '#ffffff' }, spacing: { sm: '0.5rem', md: '1rem', lg: '1.5rem' }, radius: { md: '0.75rem' } } as const;

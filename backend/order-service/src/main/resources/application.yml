@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: order-service
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/platform}
+    username: ${DATABASE_USERNAME:platform}
+    password: ${DATABASE_PASSWORD:platform}
+  flyway:
+    enabled: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/platform}
+server:
+  port: ${ORDER_SERVICE_PORT:8090}
+commerce:
+  base-url: ${COMMERCE_BASE_URL:http://localhost:8085}

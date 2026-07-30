@@ -1,0 +1,3 @@
+package com.company.platform.commerce.infrastructure;
+import com.company.platform.commerce.domain.events.CommerceEvent; import org.springframework.kafka.core.KafkaTemplate; import org.springframework.stereotype.Component;
+@Component public class KafkaCommerceEventPublisher { private final KafkaTemplate<String,Object> kafka; public KafkaCommerceEventPublisher(KafkaTemplate<String,Object> kafka){this.kafka=kafka;} public void publish(CommerceEvent event){String topic=event.eventType().startsWith("Cart")?"commerce.cart.events":event.eventType().startsWith("Price")?"commerce.price.events":event.eventType().startsWith("Commercial")?"commerce.rules.events":"commerce.product.events";kafka.send(topic,event.aggregateId().toString(),event);}}
