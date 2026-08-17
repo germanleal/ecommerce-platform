@@ -1,0 +1,2 @@
+CREATE TABLE analytics_product_sales(tenant_id UUID NOT NULL,product_id UUID NOT NULL,category_id UUID,store_id UUID,units NUMERIC(19,4) NOT NULL DEFAULT 0,total_amount NUMERIC(19,4) NOT NULL DEFAULT 0,updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(tenant_id,product_id,store_id));
+CREATE INDEX idx_analytics_product_sales_tenant_units ON analytics_product_sales(tenant_id,units DESC);

@@ -1,0 +1,1 @@
+package com.company.platform.aigateway.orchestration;import org.springframework.stereotype.Component;@Component public class PluginLoader{public PluginDescriptor validate(PluginDescriptor p){if(p.name()==null||p.name().isBlank()||p.version()==null)throw new IllegalArgumentException("invalid plugin descriptor");return p;}}

@@ -1,0 +1,2 @@
+package com.company.platform.inventory.domain;
+public enum FulfillmentStatus{CREATED,WAITING_PAYMENT,READY_FOR_PICKING,PICKING,PICKED,PACKING,PACKED,READY_FOR_SHIPPING,CANCELLED,FAILED}

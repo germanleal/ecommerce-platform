@@ -1,15 +1,11 @@
-# Tenant Domain Model
+# EC-010B Parte 1 — Tenant domain model
 
-## Tenant
+Implementado en `backend/tenant-service`:
 
-`Tenant` es Aggregate Root y representa una empresa/organización propietaria de datos.
+- `Tenant`: id, name, slug, status, configuration, createdAt y updatedAt.
+- `TenantStatus`: `CREATED`, `ACTIVE`, `SUSPENDED`, `DEACTIVATED`.
+- `Organization`: relación uno-a-uno con tenant, razón legal y propiedades comerciales.
+- `TenantMember`: userId, tenantId, role, status y createdAt.
+- `TenantConfiguration`: valores de configuración inmutables.
 
-Campos: `id` UUID, `name`, `slug`, `status`, `configuration`, `createdAt`, `updatedAt`.
-
-Estados: `PENDING`, `ACTIVE`, `SUSPENDED`, `INACTIVE`, `DELETED`.
-
-## Store
-
-`Store` es Aggregate Root independiente y siempre requiere `tenantId`. No existe Store sin Tenant.
-
-Campos: `id` UUID, `tenantId`, `name`, `slug`, `status`, `configuration`, `createdAt`, `updatedAt`.
+Las invariantes de transición se aplican dentro del agregado `Tenant`; no dependen del controlador.

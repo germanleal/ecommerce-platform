@@ -1,0 +1,3 @@
+CREATE TABLE administration_users(id UUID PRIMARY KEY,tenant_id UUID NOT NULL REFERENCES administration_tenants(id),external_user_id VARCHAR(128) NOT NULL,status VARCHAR(32) NOT NULL,configuration JSONB NOT NULL,created_at TIMESTAMPTZ NOT NULL,updated_at TIMESTAMPTZ NOT NULL,CONSTRAINT uq_admin_user_tenant_external UNIQUE(tenant_id,external_user_id));
+CREATE TABLE administration_user_roles(user_id UUID NOT NULL REFERENCES administration_users(id),role_id UUID NOT NULL REFERENCES administration_roles(id),tenant_id UUID NOT NULL,PRIMARY KEY(user_id,role_id));
+CREATE INDEX idx_admin_users_tenant_status ON administration_users(tenant_id,status);

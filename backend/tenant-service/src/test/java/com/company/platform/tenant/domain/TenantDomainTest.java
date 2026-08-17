@@ -8,9 +8,9 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 class TenantDomainTest {
-    @Test void tenantStartsPendingAndCanActivate() {
+    @Test void tenantStartsCreatedAndCanActivate() {
         var tenant = Tenant.create(new TenantName("Demo"), new Slug("demo"), Map.of());
-        assertEquals(TenantStatus.PENDING, tenant.status());
+        assertEquals(TenantStatus.CREATED, tenant.status());
         tenant.activate();
         assertEquals(TenantStatus.ACTIVE, tenant.status());
     }

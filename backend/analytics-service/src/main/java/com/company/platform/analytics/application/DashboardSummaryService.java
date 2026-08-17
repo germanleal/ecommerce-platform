@@ -1,0 +1,2 @@
+package com.company.platform.analytics.application;import java.util.*;import org.springframework.stereotype.Service;
+@Service public class DashboardSummaryService{private final KpiEngineService kpis;private final AnalyticsQueryService query;public DashboardSummaryService(KpiEngineService k,AnalyticsQueryService q){kpis=k;query=q;}public Map<String,Object> summary(){Map<String,Object> x=new LinkedHashMap<>();x.put("kpis",kpis.calculate());x.put("salesTrend",kpis.trend("month"));x.put("dashboard",query.dashboard());return x;}}

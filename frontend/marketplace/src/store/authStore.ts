@@ -1,4 +1,18 @@
 import { create } from 'zustand';
 
-type AuthState = { user: { id: string; name: string } | null; roles: string[]; permissions: string[]; setUser: (user: AuthState['user']) => void; logout: () => void };
-export const useAuthStore = create<AuthState>((set) => ({ user: null, roles: [], permissions: [], setUser: (user) => set({ user }), logout: () => set({ user: null, roles: [], permissions: [] }) }));
+const storage = typeof window === 'undefined' ? null : window.sessionStorage;
+
+export type SessionUser = { id: string; name: string; tenantId?: string };
+type AuthState = {
+  user: SessionUser | null;
+  roles: string[];
+  permissions: string[];
+  accessToken: string | null;
+  setSession: (user: SessionUser, accessToken: string, roles: string[], permissions?: string[]) => void;
+  logout: () => void;
+};
+export const useAuthStore = create<AuthState>((set) => ({
+  user: null, roles: [], permissions: [], accessToken: storage?.getItem('access_token') ?? null,
+  setSession: (user, accessToken, roles, permissions = []) => { storage?.setItem('access_token', accessToken); set({ user, accessToken, roles, permissions }); },
+  logout: () => { storage?.removeItem('access_token'); storage?.removeItem('refresh_token'); set({ user: null, accessToken: null, roles: [], permissions: [] }); }
+}));

@@ -1,7 +1,8 @@
 CREATE TABLE tenants (
     id UUID PRIMARY KEY,
+    organization_id UUID,
     name VARCHAR(255) NOT NULL,
-    slug VARCHAR(120) NOT NULL UNIQUE,
+    slug VARCHAR(120) NOT NULL,
     status VARCHAR(32) NOT NULL,
     configuration JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,

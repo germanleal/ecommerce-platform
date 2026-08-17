@@ -1,25 +1,17 @@
-﻿# shared/contracts
+# platform-shared-contracts
 
-## Objetivo
-Estructura inicial preparada para la implementaciÃ³n posterior.
+Módulo Java 21 con contratos mínimos y estables para comunicación entre bounded contexts.
 
-## Responsabilidad
-Pendiente de definiciÃ³n en los contratos de implementaciÃ³n.
+Incluye `IntegrationEvent`, `EventMetadata`, `ApiError` y `PageRequest`. No contiene lógica de dominio ni dependencias de Spring, Kafka o persistencia; los adaptadores de cada servicio serializan estos tipos.
+
+## Validación
+
+```powershell
+mvn clean test
+```
+
+El output de Maven se dirige a `build-output` para evitar bloqueos de permisos sobre `target`.
 
 ## Estado
-Bootstrap
 
-## Dependencias
-Sin dependencias tÃ©cnicas en esta fase.
-
-## Engineering Contracts relacionados
-EC-005, EC-006, EC-007
-
-## CÃ³mo ejecutar
-No ejecutable: este componente contiene Ãºnicamente estructura.
-
-## DocumentaciÃ³n
-Consultar docs/ y los contratos relacionados.
-
-## Versionado
-0.1.0
+Base implementada de EC-004. La aprobación de cada integración requiere pruebas de productor/consumidor y validación end-to-end.

@@ -1,0 +1,7 @@
+CREATE TABLE analytics_events(event_id UUID PRIMARY KEY,tenant_id UUID NOT NULL,event_type VARCHAR(128) NOT NULL,aggregate_id UUID,correlation_id UUID,occurred_at TIMESTAMPTZ NOT NULL,payload JSONB NOT NULL,processed_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE analytics_sales(tenant_id UUID NOT NULL,period_date DATE NOT NULL,store_id UUID,total_orders BIGINT NOT NULL DEFAULT 0,total_units NUMERIC(19,4) NOT NULL DEFAULT 0,total_amount NUMERIC(19,4) NOT NULL DEFAULT 0,updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(tenant_id,period_date,store_id));
+CREATE TABLE analytics_orders(tenant_id UUID NOT NULL,order_id UUID NOT NULL,status VARCHAR(64) NOT NULL,amount NUMERIC(19,4),occurred_at TIMESTAMPTZ NOT NULL,PRIMARY KEY(tenant_id,order_id));
+CREATE TABLE analytics_payments(tenant_id UUID NOT NULL,payment_id UUID NOT NULL,status VARCHAR(64) NOT NULL,amount NUMERIC(19,4),occurred_at TIMESTAMPTZ NOT NULL,PRIMARY KEY(tenant_id,payment_id));
+CREATE TABLE analytics_inventory(tenant_id UUID NOT NULL,inventory_id UUID NOT NULL,available_quantity NUMERIC(19,4),reserved_quantity NUMERIC(19,4),occurred_at TIMESTAMPTZ NOT NULL,PRIMARY KEY(tenant_id,inventory_id));
+CREATE TABLE analytics_refunds(tenant_id UUID NOT NULL,refund_id UUID NOT NULL,amount NUMERIC(19,4),occurred_at TIMESTAMPTZ NOT NULL,PRIMARY KEY(tenant_id,refund_id));
+CREATE INDEX idx_analytics_sales_tenant_period ON analytics_sales(tenant_id,period_date);CREATE INDEX idx_analytics_events_tenant_time ON analytics_events(tenant_id,occurred_at);

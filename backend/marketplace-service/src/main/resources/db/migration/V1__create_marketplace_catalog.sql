@@ -1,7 +1,7 @@
 CREATE TABLE catalogs (
     id UUID PRIMARY KEY,
     tenant_id UUID NOT NULL,
-    store_id UUID NOT NULL REFERENCES stores(id),
+    store_id UUID NOT NULL REFERENCES public.stores(id),
     name VARCHAR(255) NOT NULL,
     status VARCHAR(32) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -18,7 +18,7 @@ CREATE TABLE categories (
 CREATE TABLE products (
     id UUID PRIMARY KEY,
     tenant_id UUID NOT NULL,
-    store_id UUID NOT NULL REFERENCES stores(id),
+    store_id UUID NOT NULL REFERENCES public.stores(id),
     catalog_id UUID NOT NULL REFERENCES catalogs(id),
     category_id UUID REFERENCES categories(id),
     sku VARCHAR(64) NOT NULL,

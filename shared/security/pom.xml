@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.company.platform</groupId>
+  <artifactId>platform-shared-security</artifactId>
+  <version>0.1.0</version>
+  <properties>
+    <maven.compiler.release>21</maven.compiler.release>
+    <spring-security.version>6.3.1</spring-security.version>
+    <junit.version>5.10.3</junit.version>
+  </properties>
+  <dependencies>
+    <dependency><groupId>org.springframework</groupId><artifactId>spring-web</artifactId><version>6.1.11</version></dependency>
+    <dependency><groupId>org.springframework.security</groupId><artifactId>spring-security-oauth2-resource-server</artifactId><version>${spring-security.version}</version></dependency>
+    <dependency><groupId>org.springframework.security</groupId><artifactId>spring-security-oauth2-jose</artifactId><version>${spring-security.version}</version></dependency>
+    <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><version>${junit.version}</version><scope>test</scope></dependency>
+  </dependencies>
+  <build><directory>build-output</directory><plugins><plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><version>3.2.5</version></plugin></plugins></build>
+</project>

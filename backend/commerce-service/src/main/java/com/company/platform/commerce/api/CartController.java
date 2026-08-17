@@ -9,5 +9,6 @@ import com.company.platform.commerce.domain.cart.*; import com.company.platform.
  @PostMapping("/carts/{id}/items") public Cart add(@PathVariable UUID id,@RequestBody AddItemRequest r){var c=cart(id);var p=pricing.currentPrice(r.productId()).orElseThrow(()->new NoSuchElementException("active price not found"));c.addItem(new CartItem(null,c.id(),r.productId(),r.quantity(),p.money(),null,null));var saved=carts.save(c);events.publish(new CommerceEvent(UUID.randomUUID(),"ProductAddedToCart",saved.id(),saved.tenantId(),Instant.now(),r));return saved;}
  @PutMapping("/carts/{id}/items/{itemId}") public Cart update(@PathVariable UUID id,@PathVariable UUID itemId,@RequestBody UpdateItemRequest r){var c=cart(id);c.updateQuantity(itemId,r.quantity());return carts.save(c);}
  @DeleteMapping("/carts/{id}/items/{itemId}") public Cart remove(@PathVariable UUID id,@PathVariable UUID itemId){var c=cart(id);c.removeItem(itemId);items.deleteByTenantIdAndCartIdAndId(tenant.currentTenantId(),id,itemId);return carts.save(c);}
+ @PostMapping("/carts/{id}/complete") public Cart complete(@PathVariable UUID id){var c=cart(id);c.complete();return carts.save(c);}
  private Cart cart(UUID id){return carts.findByTenantIdAndId(tenant.currentTenantId(),id).orElseThrow(()->new NoSuchElementException("cart not found"));}
 }

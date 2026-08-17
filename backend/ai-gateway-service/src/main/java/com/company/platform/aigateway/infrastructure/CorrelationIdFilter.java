@@ -1,0 +1,3 @@
+package com.company.platform.aigateway.infrastructure;
+import jakarta.servlet.*;import jakarta.servlet.http.*;import java.io.IOException;import java.util.UUID;import org.slf4j.MDC;import org.springframework.stereotype.Component;
+@Component public class CorrelationIdFilter implements Filter { public void doFilter(ServletRequest request,ServletResponse response,FilterChain chain)throws IOException,ServletException{var req=(HttpServletRequest)request;var res=(HttpServletResponse)response;String id=req.getHeader("X-Correlation-Id");if(id==null||id.isBlank())id=UUID.randomUUID().toString();res.setHeader("X-Correlation-Id",id);try(var ignored=MDC.putCloseable("correlationId",id)){chain.doFilter(request,response);}} }

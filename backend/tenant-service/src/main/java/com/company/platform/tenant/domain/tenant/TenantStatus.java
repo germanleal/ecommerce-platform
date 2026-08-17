@@ -1,3 +1,3 @@
 package com.company.platform.tenant.domain.tenant;
 
-public enum TenantStatus { PENDING, ACTIVE, SUSPENDED, INACTIVE, DELETED }
+public enum TenantStatus { CREATED, ACTIVE, SUSPENDED, DEACTIVATED }

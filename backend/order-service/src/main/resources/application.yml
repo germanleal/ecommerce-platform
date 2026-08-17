@@ -3,16 +3,26 @@ spring:
     name: order-service
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/platform}
-    username: ${DATABASE_USERNAME:platform}
-    password: ${DATABASE_PASSWORD:platform}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:3}
+      minimum-idle: ${DB_POOL_MIN_IDLE:0}
   flyway:
     enabled: true
+    table: order_flyway_schema_history
+    baseline-on-migrate: true
+    baseline-version: 0
   security:
     oauth2:
       resourceserver:
         jwt:
           issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/platform}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/platform}/protocol/openid-connect/certs}
 server:
   port: ${ORDER_SERVICE_PORT:8090}
 commerce:
   base-url: ${COMMERCE_BASE_URL:http://localhost:8085}
+management:
+  endpoints.web.exposure.include: ${MANAGEMENT_ENDPOINTS:health,info}
+  endpoint.health.probes.enabled: true

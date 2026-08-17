@@ -12,6 +12,7 @@ services:
       - "${POSTGRES_PORT}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init:/docker-entrypoint-initdb.d:ro
     networks: [database-network]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
@@ -48,7 +49,7 @@ services:
       - zookeeper-logs:/var/lib/zookeeper/log
     networks: [messaging-network]
     healthcheck:
-      test: ["CMD-SHELL", "echo ruok | nc -w 2 localhost 2181 | grep imok"]
+      test: ["CMD-SHELL", "echo srvr | nc -w 2 localhost 2181 | grep -q 'Zookeeper version'"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -82,7 +83,7 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:25.0.6
     container_name: ecommerce-keycloak
-    command: start-dev
+    command: start-dev --import-realm
     depends_on:
       postgres-keycloak: { condition: service_healthy }
     environment:
@@ -92,16 +93,360 @@ services:
       KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_HTTP_PORT: 8080
       KC_HEALTH_ENABLED: true
     ports:
       - "${KEYCLOAK_PORT}:8080"
+    volumes:
+      - ./infrastructure/keycloak:/opt/keycloak/data/import:ro
     networks: [identity-network, database-network]
     healthcheck:
       test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080"]
       interval: 15s
       timeout: 5s
       retries: 10
+
+  kafka-init:
+    image: confluentinc/cp-kafka:7.7.1
+    container_name: ecommerce-kafka-init
+    depends_on:
+      kafka: { condition: service_healthy }
+    volumes:
+      - ./infrastructure/kafka/init-topics.sh:/opt/platform/init-topics.sh:ro
+    entrypoint: ["/bin/bash", "/opt/platform/init-topics.sh"]
+    networks: [messaging-network]
+    restart: "no"
+
+  postgres-seed:
+    image: postgres:16.4
+    depends_on:
+      postgres: { condition: service_healthy }
+      marketplace-service: { condition: service_healthy }
+      commerce-service: { condition: service_healthy }
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./infrastructure/postgres/seed-demo.sql:/seed-demo.sql:ro
+    entrypoint: ["/bin/sh", "-c", "psql -h postgres -U ${POSTGRES_USER} -d ${POSTGRES_DB} -f /seed-demo.sql"]
+    networks: [database-network]
+    restart: "no"
+
+  inventory-service:
+    build:
+      context: .
+      dockerfile: backend/inventory-service/Dockerfile
+    container_name: ecommerce-inventory-service
+    depends_on:
+      postgres: { condition: service_healthy }
+      keycloak: { condition: service_healthy }
+      kafka: { condition: service_healthy }
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DATABASE_USERNAME: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_ISSUER_URI_PUBLIC:-http://localhost:8080/realms/platform}
+      KEYCLOAK_JWK_SET_URI: ${KEYCLOAK_JWK_SET_URI_INTERNAL:-http://keycloak:8080/realms/platform/protocol/openid-connect/certs}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      INVENTORY_SERVICE_PORT: 8092
+      SPRING_PROFILES_ACTIVE: ${PLATFORM_PROFILE:-dev}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      - "8092:8092"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8092/actuator/health | grep -q 'UP'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    networks: [backend-network, database-network, messaging-network, identity-network]
+
+  analytics-service:
+    build:
+      context: .
+      dockerfile: backend/analytics-service/Dockerfile
+    container_name: ecommerce-analytics-service
+    depends_on:
+      postgres: { condition: service_healthy }
+      kafka: { condition: service_healthy }
+      keycloak: { condition: service_healthy }
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DATABASE_USERNAME: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_ISSUER_URI_PUBLIC:-http://localhost:8080/realms/platform}
+      KEYCLOAK_JWK_SET_URI: ${KEYCLOAK_JWK_SET_URI_INTERNAL:-http://keycloak:8080/realms/platform/protocol/openid-connect/certs}
+      ANALYTICS_SERVICE_PORT: 8093
+      SPRING_PROFILES_ACTIVE: ${PLATFORM_PROFILE:-dev}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      - "8093:8093"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8093/actuator/health | grep -q 'UP'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    networks: [backend-network, database-network, messaging-network, identity-network]
+
+  integration-service:
+    build:
+      context: .
+      dockerfile: backend/integration-service/Dockerfile
+    container_name: ecommerce-integration-service
+    depends_on:
+      postgres: { condition: service_healthy }
+      kafka: { condition: service_healthy }
+      keycloak: { condition: service_healthy }
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DATABASE_USERNAME: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_ISSUER_URI_PUBLIC:-http://localhost:8080/realms/platform}
+      KEYCLOAK_JWK_SET_URI: ${KEYCLOAK_JWK_SET_URI_INTERNAL:-http://keycloak:8080/realms/platform/protocol/openid-connect/certs}
+      INTEGRATION_SERVICE_PORT: 8094
+      SPRING_PROFILES_ACTIVE: ${PLATFORM_PROFILE:-dev}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      - "8094:8094"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8094/actuator/health | grep -q 'UP'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    networks: [backend-network, database-network, messaging-network, identity-network]
+
+  administration-service:
+    build:
+      context: ./backend/administration-service
+      dockerfile: Dockerfile
+    container_name: ecommerce-administration-service
+    depends_on:
+      postgres: { condition: service_healthy }
+      keycloak: { condition: service_healthy }
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DATABASE_USERNAME: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_ISSUER_URI_PUBLIC:-http://localhost:8080/realms/platform}
+      KEYCLOAK_JWK_SET_URI: ${KEYCLOAK_JWK_SET_URI_INTERNAL:-http://keycloak:8080/realms/platform/protocol/openid-connect/certs}
+      ADMINISTRATION_SERVICE_PORT: 8095
+      SPRING_PROFILES_ACTIVE: ${PLATFORM_PROFILE:-dev}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      - "8095:8095"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8095/actuator/health | grep -q 'UP'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    networks: [backend-network, database-network, identity-network]
+
+  identity-service:
+    build:
+      context: ./backend/identity-service
+      dockerfile: Dockerfile
+    container_name: ecommerce-identity-service
+    depends_on:
+      keycloak: { condition: service_healthy }
+    environment:
+      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_ISSUER_URI_PUBLIC:-http://localhost:8080/realms/platform}
+      KEYCLOAK_JWK_SET_URI: ${KEYCLOAK_JWK_SET_URI_INTERNAL:-http://keycloak:8080/realms/platform/protocol/openid-connect/certs}
+      KEYCLOAK_TOKEN_URL: ${KEYCLOAK_TOKEN_URL_INTERNAL:-http://keycloak:8080/realms/platform/protocol/openid-connect/token}
+      KEYCLOAK_CLIENT_ID: identity-service
+      IDENTITY_SERVICE_PORT: 8097
+      SPRING_PROFILES_ACTIVE: ${PLATFORM_PROFILE:-dev}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      - "8097:8097"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8097/actuator/health | grep -q 'UP'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    networks: [backend-network, identity-network]
+
+  tenant-service:
+    build:
+      context: .
+      dockerfile: backend/tenant-service/Dockerfile
+    container_name: ecommerce-tenant-service
+    depends_on:
+      postgres: { condition: service_healthy }
+      keycloak: { condition: service_healthy }
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_ISSUER_URI_PUBLIC:-http://localhost:8080/realms/platform}
+      KEYCLOAK_JWK_SET_URI: ${KEYCLOAK_JWK_SET_URI_INTERNAL:-http://keycloak:8080/realms/platform/protocol/openid-connect/certs}
+      TENANT_SERVICE_PORT: 8098
+      SPRING_PROFILES_ACTIVE: ${PLATFORM_PROFILE:-dev}
+    ports:
+      - "8098:8098"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8098/actuator/health | grep -q 'UP'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    networks: [backend-network, database-network, identity-network]
+
+  marketplace-service:
+    build:
+      context: ./backend/marketplace-service
+      dockerfile: Dockerfile
+    container_name: ecommerce-marketplace-service
+    depends_on:
+      postgres: { condition: service_healthy }
+      keycloak: { condition: service_healthy }
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DATABASE_USERNAME: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_ISSUER_URI_PUBLIC:-http://localhost:8080/realms/platform}
+      KEYCLOAK_JWK_SET_URI: ${KEYCLOAK_JWK_SET_URI_INTERNAL:-http://keycloak:8080/realms/platform/protocol/openid-connect/certs}
+      MARKETPLACE_SERVICE_PORT: 8099
+      SPRING_PROFILES_ACTIVE: ${PLATFORM_PROFILE:-dev}
+    ports:
+      - "8099:8099"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8099/actuator/health | grep -q 'UP'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    networks: [backend-network, database-network]
+
+  commerce-service:
+    build:
+      context: .
+      dockerfile: backend/commerce-service/Dockerfile
+    container_name: ecommerce-commerce-service
+    depends_on:
+      postgres: { condition: service_healthy }
+      kafka: { condition: service_healthy }
+      keycloak: { condition: service_healthy }
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DATABASE_USERNAME: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_ISSUER_URI_PUBLIC:-http://localhost:8080/realms/platform}
+      KEYCLOAK_JWK_SET_URI: ${KEYCLOAK_JWK_SET_URI_INTERNAL:-http://keycloak:8080/realms/platform/protocol/openid-connect/certs}
+      COMMERCE_SERVICE_PORT: 8085
+      SPRING_PROFILES_ACTIVE: ${PLATFORM_PROFILE:-dev}
+    ports:
+      - "8085:8085"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8085/actuator/health | grep -q 'UP'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    networks: [backend-network, database-network, messaging-network, identity-network]
+
+  marketplace-frontend:
+    build:
+      context: ./frontend/marketplace
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${MARKETPLACE_API_URL:-/api}
+        VITE_OIDC_ISSUER: ${KEYCLOAK_ISSUER_URI_PUBLIC:-http://localhost:8080/realms/platform}
+        VITE_OIDC_CLIENT_ID: web-client
+    container_name: ecommerce-marketplace-frontend
+    depends_on:
+      marketplace-service: { condition: service_healthy }
+    ports:
+      - "3000:80"
+    networks: [frontend-network, backend-network, identity-network]
+
+  ai-gateway-service:
+    build:
+      context: ./backend/ai-gateway-service
+      dockerfile: Dockerfile
+    container_name: ecommerce-ai-gateway-service
+    depends_on:
+      postgres: { condition: service_healthy }
+      keycloak: { condition: service_healthy }
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DATABASE_USERNAME: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_ISSUER_URI_PUBLIC:-http://localhost:8080/realms/platform}
+      KEYCLOAK_JWK_SET_URI: ${KEYCLOAK_JWK_SET_URI_INTERNAL:-http://keycloak:8080/realms/platform/protocol/openid-connect/certs}
+      AI_GATEWAY_SERVICE_PORT: 8096
+      AI_ENABLED: ${AI_ENABLED:-false}
+      AI_PROVIDER: ${AI_PROVIDER:-reference}
+      AI_MODEL: ${AI_MODEL:-reference-model}
+      AI_TIMEOUT: ${AI_TIMEOUT:-5s}
+      AI_MAX_TOKENS: ${AI_MAX_TOKENS:-1024}
+      AI_RATE_LIMIT: ${AI_RATE_LIMIT:-30}
+      SPRING_PROFILES_ACTIVE: ${PLATFORM_PROFILE:-dev}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      - "8096:8096"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8096/actuator/health | grep -q 'UP'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    networks: [backend-network, database-network, identity-network]
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: backend/payment-service/Dockerfile
+    container_name: ecommerce-payment-service
+    depends_on:
+      postgres: { condition: service_healthy }
+      kafka: { condition: service_healthy }
+      keycloak: { condition: service_healthy }
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DATABASE_USERNAME: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_ISSUER_URI_PUBLIC:-http://localhost:8080/realms/platform}
+      KEYCLOAK_JWK_SET_URI: ${KEYCLOAK_JWK_SET_URI_INTERNAL:-http://keycloak:8080/realms/platform/protocol/openid-connect/certs}
+      PAYMENT_SERVICE_PORT: 8091
+      PAYMENT_PROVIDER_MODE: ${PAYMENT_PROVIDER_MODE:-success}
+      SPRING_PROFILES_ACTIVE: ${PLATFORM_PROFILE:-dev}
+    ports:
+      - "8091:8091"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8091/actuator/health | grep -q 'UP'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    networks: [backend-network, database-network, messaging-network, identity-network]
+
+  order-service:
+    build:
+      context: .
+      dockerfile: backend/order-service/Dockerfile
+    container_name: ecommerce-order-service
+    depends_on:
+      postgres: { condition: service_healthy }
+      kafka: { condition: service_healthy }
+      keycloak: { condition: service_healthy }
+      commerce-service: { condition: service_healthy }
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DATABASE_USERNAME: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_ISSUER_URI_PUBLIC:-http://localhost:8080/realms/platform}
+      KEYCLOAK_JWK_SET_URI: ${KEYCLOAK_JWK_SET_URI_INTERNAL:-http://keycloak:8080/realms/platform/protocol/openid-connect/certs}
+      COMMERCE_BASE_URL: http://commerce-service:8085
+      ORDER_SERVICE_PORT: 8090
+      SPRING_PROFILES_ACTIVE: ${PLATFORM_PROFILE:-dev}
+    ports:
+      - "8090:8090"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8090/actuator/health | grep -q 'UP'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    networks: [backend-network, database-network, messaging-network, identity-network]
 
 networks:
   frontend-network:

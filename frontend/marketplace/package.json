@@ -3,6 +3,7 @@
   "version": "0.2.0",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@9.15.4",
   "scripts": { "dev": "vite", "build": "tsc -b && vite build", "test": "vitest run" },
   "dependencies": {
     "@radix-ui/react-dialog": "1.1.1",

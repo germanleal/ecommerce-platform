@@ -1,3 +1,10 @@
 export type ProductStatus = 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
-export type Product = { id: string; tenantId: string; storeId: string; catalogId: string; sku: string; name: string; description?: string; status: ProductStatus };
+export type StoreStatus = 'CREATED' | 'CONFIGURED' | 'ACTIVE' | 'SUSPENDED' | 'CLOSED';
+export type Store = { id: string; tenantId: string; name: string; slug: string; description?: string; logoUrl?: string; status: StoreStatus };
+export type Category = { id: string; name: string; description?: string; status?: string };
+export type Price = { amount: number; currency: string };
+export type Product = { id: string; tenantId: string; storeId: string; catalogId: string; categoryId?: string; sku: string; name: string; description?: string; status: ProductStatus; price?: Price; imageUrl?: string; available?: boolean; category?: Category };
+export type CartItem = { id: string; productId: string; name: string; quantity: number; unitPrice: number; currency: string };
+export type Cart = { id?: string; items: CartItem[]; subtotal?: Price };
+export type ApiError = { status: number; message: string; correlationId?: string };
 export type Tenant = { id: string; name: string };

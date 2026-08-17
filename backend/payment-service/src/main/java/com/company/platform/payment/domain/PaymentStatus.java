@@ -1,0 +1,5 @@
+package com.company.platform.payment.domain;
+
+public enum PaymentStatus {
+    CREATED, PENDING, PROCESSING, AUTHORIZED, PAID, CAPTURED, SETTLED, FAILED, DECLINED, CANCELLED, REFUNDED, PARTIALLY_REFUNDED
+}
