@@ -34,8 +34,6 @@ public class AdministrationController {
     @DeleteMapping("/tenants/{id}/members/{userId}") @ResponseStatus(HttpStatus.NO_CONTENT) public void removeMember(@PathVariable UUID id,@PathVariable UUID userId,Authentication a){service.removeMember(a,id,userId);}
     @GetMapping("/audit") public List<Map<String,Object>> audit(@RequestParam(required=false) UUID tenantId,@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="50") int size,Authentication a){return service.audit(a,tenantId,page,size);}
 
-    @PostMapping("/{type}") public Map<String,Object> legacyCreate(@PathVariable String type,@RequestBody Map<String,Object> body,Authentication a){return service.createLegacy(type,body,a);}
-    @GetMapping("/{type}") public List<Map<String,Object>> legacyList(@PathVariable String type,Authentication a){return service.listLegacy(type,a);}
     @PutMapping("/feature-flags/{id}") public Map<String,Object> flag(@PathVariable UUID id,@RequestBody Map<String,Object> body,Authentication a){return service.updateFlag(id,body,a);}
     @ExceptionHandler(NoSuchElementException.class) @ResponseStatus(HttpStatus.NOT_FOUND) public Map<String,String> notFound(NoSuchElementException e){return Map.of("error","NOT_FOUND","message",e.getMessage());}
     @ExceptionHandler(SecurityException.class) @ResponseStatus(HttpStatus.FORBIDDEN) public Map<String,String> forbidden(SecurityException e){return Map.of("error","FORBIDDEN","message",e.getMessage());}

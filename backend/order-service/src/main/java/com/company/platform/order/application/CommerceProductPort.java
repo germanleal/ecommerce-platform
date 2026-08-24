@@ -5,5 +5,5 @@ import java.util.UUID;
 
 public interface CommerceProductPort {
  ProductSnapshot resolve(UUID tenantId, UUID productId);
- record ProductSnapshot(UUID productId, String sku, String name, BigDecimal amount, String currency) {}
+ record ProductSnapshot(UUID productId, UUID tenantId, UUID storeId, String sku, String name, BigDecimal amount, String currency) {}
 }

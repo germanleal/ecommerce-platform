@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Product, Store } from '../../types/marketplace';
+import type { Product, PurchaseOrder, Store } from '../../types/marketplace';
 import { useAuthStore } from '../../store/authStore';
 
 export const apiClient = axios.create({ baseURL: import.meta.env.VITE_API_URL ?? '/api', timeout: 10000 });
@@ -22,6 +22,13 @@ export function apiMessage(error: unknown): string {
 }
 export const storeApi = { list: (search = '') => apiClient.get<Store[]>('/stores', { params: search ? { search } : undefined }), get: (id: string) => apiClient.get<Store>(`/stores/${id}`) };
 export const productApi = { list: (params?: { storeId?: string; categoryId?: string; search?: string }) => apiClient.get<Product[]>('/products', { params }), get: (id: string) => apiClient.get<Product>(`/products/${id}`), publish: (id: string) => apiClient.post(`/products/${id}/publish`) };
+const orderClient = axios.create({ baseURL: import.meta.env.VITE_ORDER_API_URL ?? '/order-api', timeout: 15000 });
+orderClient.interceptors.request.use((config) => { config.headers = config.headers ?? {}; config.headers['X-Correlation-Id'] ??= crypto.randomUUID(); const token = useAuthStore.getState().accessToken; if (token) config.headers.Authorization = `Bearer ${token}`; return config; });
+export const orderApi = {
+  create: (body: { storeId: string; currency: string; lines: Array<{ productId: string; quantity: number }> }) => orderClient.post<PurchaseOrder>('', body),
+  createMarketplace: (body: { tenantId: string; storeId: string; currency: string; lines: Array<{ productId: string; quantity: number }> }) => orderClient.post<PurchaseOrder>('/marketplace', body),
+  get: (id: string) => orderClient.get<PurchaseOrder>(`/${id}`)
+};
 
 export type Organization = { id: string; name: string; slug: string; status: string; created_at?: string; updated_at?: string };
 export type AdminTenant = { id: string; organization_id: string; name: string; slug: string; status: string; created_at?: string; updated_at?: string; configuration?: Record<string, unknown> };
@@ -39,6 +46,21 @@ export const adminApi = {
   tenants: () => adminClient.get<AdminTenant[]>('/tenants'), tenant: (id: string) => adminClient.get<AdminTenant>(`/tenants/${id}`), createTenant: (body: { organizationId: string; name: string; slug: string; ownerId?: string; configuration: Record<string, unknown> }) => adminClient.post<AdminTenant>('/tenants', body), updateTenant: (id: string, body: { name: string; slug: string; configuration: Record<string, unknown> }) => adminClient.put<AdminTenant>(`/tenants/${id}`, body), changeTenantStatus: (id: string, status: string) => adminClient.patch<AdminTenant>(`/tenants/${id}/status`, { status }),
   members: (tenantId: string) => adminClient.get<Membership[]>(`/tenants/${tenantId}/members`), addMember: (tenantId: string, body: { userId: string; role: string }) => adminClient.post<Membership>(`/tenants/${tenantId}/members`, body), changeMemberRole: (tenantId: string, userId: string, role: string) => adminClient.put<Membership>(`/tenants/${tenantId}/members/${userId}`, { role }), changeMemberStatus: (tenantId: string, userId: string, status: string) => adminClient.patch<Membership>(`/tenants/${tenantId}/members/${userId}/status`, { status }),
   audit: () => adminClient.get<AuditRecord[]>('/audit')
+};
+export type AdminResource = Record<string, unknown> & { id: string; name?: string; status?: string; code?: string; sku?: string };
+export const adminCatalogApi = {
+  list: (resource: string, search = '', tenantId?: string) => adminClient.get<AdminResource[]>(`/${resource}`, { params: { search, tenantId } }),
+  create: (resource: string, body: Record<string, unknown>) => adminClient.post<AdminResource>(`/${resource}`, body),
+  update: (resource: string, id: string, body: Record<string, unknown>) => adminClient.put<AdminResource>(`/${resource}/${id}`, body),
+  status: (resource: string, id: string, status: string) => adminClient.patch<AdminResource>(`/${resource}/${id}/status`, { status }),
+  removeProduct: (id: string) => adminClient.delete(`/products/${id}`),
+  images: (id: string) => adminClient.get<AdminResource[]>(`/products/${id}/images`),
+  addImage: (id: string, body: Record<string, unknown>) => adminClient.post(`/products/${id}/images`, body),
+  updateImage: (id: string, imageId: string, body: Record<string, unknown>) => adminClient.put(`/products/${id}/images/${imageId}`, body),
+  removeImage: (id: string, imageId: string) => adminClient.delete(`/products/${id}/images/${imageId}`),
+  capabilities: () => adminClient.get<AdminResource[]>('/capabilities'),
+  tenantCapabilities: (tenantId: string) => adminClient.get<AdminResource[]>(`/tenants/${tenantId}/capabilities`),
+  setCapability: (tenantId: string, code: string, status: string) => adminClient.put(`/tenants/${tenantId}/capabilities/${code}`, { status })
 };
 export const integrationApi = { list: () => integrationsClient.get<Array<{ id: string; provider: string; type: string; status: string; endpoint: string }>>('/'), executions: (id: string) => integrationsClient.get(`/${id}/executions`) };
 export const analyticsApi = { overview: () => analyticsClient.get<Record<string, unknown>>('/overview') };

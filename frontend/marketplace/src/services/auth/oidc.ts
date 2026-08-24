@@ -11,11 +11,12 @@ export async function login() {
   if (!issuer) throw new Error('OIDC is not configured.');
   const state = random(), verifier = random();
   sessionStorage.setItem('oidc_state', state); sessionStorage.setItem('oidc_verifier', verifier);
+  sessionStorage.setItem('post_login_path', `${window.location.pathname}${window.location.search}`);
   const url = new URL(`${issuer}/protocol/openid-connect/auth`);
   url.search = new URLSearchParams({ client_id: clientId, response_type: 'code', scope: 'openid profile', redirect_uri: redirectUri, state, code_challenge: await challenge(verifier), code_challenge_method: 'S256' }).toString();
   window.location.assign(url.toString());
 }
-export async function completeLogin() {
+export async function completeLogin(): Promise<string> {
   if (!issuer) throw new Error('OIDC is not configured.');
   const params = new URLSearchParams(window.location.search);
   if (params.get('state') !== sessionStorage.getItem('oidc_state') || !params.get('code')) throw new Error('Invalid login response.');
@@ -25,6 +26,9 @@ export async function completeLogin() {
   const tokens = await response.json() as { access_token: string; refresh_token?: string };
   if (tokens.refresh_token) sessionStorage.setItem('refresh_token', tokens.refresh_token);
   hydrate(tokens.access_token); sessionStorage.removeItem('oidc_state'); sessionStorage.removeItem('oidc_verifier');
+  const returnTo = sessionStorage.getItem('post_login_path') ?? '/';
+  sessionStorage.removeItem('post_login_path');
+  return returnTo.startsWith('/') && !returnTo.startsWith('//') ? returnTo : '/';
 }
 export function hydrate(token = sessionStorage.getItem('access_token')) {
   if (!token) return false;

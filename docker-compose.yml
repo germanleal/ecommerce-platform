@@ -121,15 +121,18 @@ services:
 
   postgres-seed:
     image: postgres:16.4
+    profiles: ["demo"]
     depends_on:
       postgres: { condition: service_healthy }
       marketplace-service: { condition: service_healthy }
       commerce-service: { condition: service_healthy }
+      administration-service: { condition: service_healthy }
+      inventory-service: { condition: service_healthy }
     environment:
       PGPASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - ./infrastructure/postgres/seed-demo.sql:/seed-demo.sql:ro
-    entrypoint: ["/bin/sh", "-c", "psql -h postgres -U ${POSTGRES_USER} -d ${POSTGRES_DB} -f /seed-demo.sql"]
+    entrypoint: ["/bin/sh", "-c", "psql -v ON_ERROR_STOP=1 -h postgres -U ${POSTGRES_USER} -d ${POSTGRES_DB} -f /seed-demo.sql"]
     networks: [database-network]
     restart: "no"
 
@@ -355,6 +358,7 @@ services:
     container_name: ecommerce-marketplace-frontend
     depends_on:
       marketplace-service: { condition: service_healthy }
+      order-service: { condition: service_healthy }
     ports:
       - "3000:80"
     networks: [frontend-network, backend-network, identity-network]
@@ -437,6 +441,7 @@ services:
       KEYCLOAK_ISSUER_URI: ${KEYCLOAK_ISSUER_URI_PUBLIC:-http://localhost:8080/realms/platform}
       KEYCLOAK_JWK_SET_URI: ${KEYCLOAK_JWK_SET_URI_INTERNAL:-http://keycloak:8080/realms/platform/protocol/openid-connect/certs}
       COMMERCE_BASE_URL: http://commerce-service:8085
+      MARKETPLACE_BASE_URL: http://marketplace-service:8099
       ORDER_SERVICE_PORT: 8090
       SPRING_PROFILES_ACTIVE: ${PLATFORM_PROFILE:-dev}
     ports:

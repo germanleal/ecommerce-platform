@@ -19,7 +19,11 @@ El stack publica PostgreSQL (`5432`), Kafka (`9092`), Keycloak (`8080`), el fron
 
 ## Datos demo
 
-`postgres-seed` carga de forma idempotente Demo Organization, `demo-tenant`, Demo Store, catálogo, categoría, producto activo y precio USD. Se ejecuta automáticamente tras las migraciones y puede repetirse con `docker compose run --rm postgres-seed`.
+`postgres-seed` carga de forma idempotente Demo Organization, `demo-tenant`, Demo Company, tres categorías, IVA, cinco productos con galería, dos servicios, nueve capabilities y stock. Se ejecuta automáticamente tras las migraciones y puede repetirse con `docker compose run --rm postgres-seed`.
+
+## Administración
+
+La consola está disponible en `http://localhost:3000/admin` para `PLATFORM_ADMIN` y administradores de tenant. Incluye Organizations, Tenants, Companies, Categories, Products, Taxes, Services, Capabilities, memberships y auditoría. Las APIs se exponen bajo `/api/admin`; todas las operaciones tenant-aware se resuelven desde el JWT/TenantContext y los productos activados se sincronizan con Marketplace y Commerce.
 
 ## Configuración
 
