@@ -1,56 +1,59 @@
-# SaaS Multi-Tenant Ecommerce Platform
+# Ecommerce Platform
 
-MVP multi-tenant con Spring Boot, PostgreSQL, Kafka, Keycloak y React.
+Plataforma de marketplace multi-tenant para administrar empresas, catálogos y productos, vender desde una tienda pública y gestionar órdenes de compra. Incluye una consola administrativa, autenticación centralizada y métricas operacionales por tenant.
 
-## Requisitos
+## Componentes
 
-- Docker Desktop con Docker Compose v2.
-- Java 21 y Maven para ejecutar módulos backend localmente.
-- Node.js 20+ y pnpm 9.15.4 para el frontend local.
+- **Frontend:** React + TypeScript.
+- **Servicios:** Spring Boot para marketplace, órdenes, catálogo/administración, inventario, analítica e integraciones.
+- **Infraestructura:** PostgreSQL, Kafka y Keycloak, todos orquestados con Docker Compose.
+- **Seguridad:** OAuth 2.0/OIDC con Keycloak y roles de plataforma o tenant.
 
-## Inicio rápido
+## Levantar la demo
 
-1. Copia `.env.example` a `.env` y sustituye únicamente contraseñas de desarrollo.
-2. Ejecuta `docker compose up --build -d`.
-3. Comprueba el estado con `docker compose ps`.
-4. Abre el frontend en `http://localhost:3000` y Keycloak en `http://localhost:8080`.
-
-El stack publica PostgreSQL (`5432`), Kafka (`9092`), Keycloak (`8080`), el frontend (`3000`) y los servicios backend en `8085` y `8090`–`8099`.
-
-## Datos demo
-
-`postgres-seed` carga de forma idempotente Demo Organization, `demo-tenant`, Demo Company, tres categorías, IVA, cinco productos con galería, dos servicios, nueve capabilities y stock. Se ejecuta automáticamente tras las migraciones y puede repetirse con `docker compose run --rm postgres-seed`.
-
-## Administración
-
-La consola está disponible en `http://localhost:3000/admin` para `PLATFORM_ADMIN` y administradores de tenant. Incluye Organizations, Tenants, Companies, Categories, Products, Taxes, Services, Capabilities, memberships y auditoría. Las APIs se exponen bajo `/api/admin`; todas las operaciones tenant-aware se resuelven desde el JWT/TenantContext y los productos activados se sincronizan con Marketplace y Commerce.
-
-## Configuración
-
-Las variables requeridas y sus valores seguros para desarrollo están en `.env.example`. No se versionan `.env`, tokens, claves privadas ni credenciales reales. Los servicios Docker validan el issuer público de Keycloak y obtienen claves JWK mediante la red interna.
-
-## Identidad y frontend
-
-El realm `platform` se importa desde `infrastructure/keycloak/realm-platform.json`. El frontend usa Authorization Code con PKCE mediante el cliente público `web-client`; no almacena secretos de cliente.
-
-## Pruebas
-
-Ejemplo de backend:
+Requisitos: Docker Desktop con Docker Compose v2.
 
 ```powershell
-mvn -f shared/contracts/pom.xml clean install -DskipTests
-mvn -f shared/security/pom.xml clean install -DskipTests
-mvn -f backend/tenant-service/pom.xml clean verify
+Copy-Item .env.example .env
+docker compose --profile demo up --build -d
+docker compose ps
 ```
 
-Frontend:
+La primera compilación tarda algunos minutos. El perfil `demo` carga tenants, empresas, productos, categorías, impuestos, stock e imágenes de ejemplo.
 
-```powershell
-pnpm --dir frontend/marketplace install
-pnpm --dir frontend/marketplace test
-pnpm --dir frontend/marketplace build
+Abre:
+
+- Marketplace: `http://localhost:3000`
+- Administración: `http://localhost:3000/admin`
+- Keycloak: `http://localhost:8080`
+
+Credenciales demo de administración:
+
+```text
+usuario: platform-admin
+contraseña: DevAdmin-010A!
 ```
+
+## Flujo de prueba rápido
+
+1. En **Stores**, agrega productos —incluso de distintas tiendas— al carrito.
+2. En **Cart**, crea la compra; se genera una orden por comercio.
+3. En **Administration → Orders**, confirma y procesa las órdenes.
+4. En **Dashboard**, revisa los KPI del tenant seleccionado.
 
 ## Operación local
 
-Los health checks se exponen en `/actuator/health`. Para detener conservando datos: `docker compose down`. Para un entorno nuevo, elimina explícitamente los volúmenes Docker y vuelve a ejecutar el inicio rápido.
+```powershell
+# Ver estado y logs
+docker compose ps
+docker compose logs -f marketplace-frontend
+
+# Reconstruir servicios modificados
+docker compose build marketplace-frontend administration-service
+docker compose up -d marketplace-frontend administration-service
+
+# Detener conservando datos
+docker compose down
+```
+
+Los health checks de los servicios Spring Boot están disponibles en `/actuator/health`. La configuración local se encuentra en `.env.example`; no versiones `.env` ni credenciales reales.
