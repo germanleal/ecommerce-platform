@@ -1,0 +1,3 @@
+package com.company.platform.administration.domain;
+import static org.junit.jupiter.api.Assertions.*;import org.junit.jupiter.api.Test;
+class TenantTest{@Test void createsActiveTenant(){Tenant t=Tenant.create("acme","Acme","PRO","{}");assertEquals("ACTIVE",t.status());assertEquals("acme",t.code());}@Test void transitionsTenantState(){Tenant t=Tenant.create("acme","Acme","PRO","{}");assertEquals("SUSPENDED",t.suspend().status());assertEquals("ACTIVE",t.suspend().activate().status());}@Test void rejectsInvalidTenant(){assertThrows(IllegalArgumentException.class,()->Tenant.create("","Acme","PRO","{}"));}}

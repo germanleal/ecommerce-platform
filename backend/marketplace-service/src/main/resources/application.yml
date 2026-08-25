@@ -1,0 +1,21 @@
+spring:
+  application.name: marketplace-service
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/platform}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    hikari:
+      connection-init-sql: SET search_path TO marketplace,public
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:3}
+      minimum-idle: ${DB_POOL_MIN_IDLE:0}
+  flyway:
+    enabled: true
+    schemas: marketplace
+    default-schema: marketplace
+    table: marketplace_flyway_schema_history
+  security.oauth2.resourceserver.jwt.issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/platform}
+  security.oauth2.resourceserver.jwt.jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/platform}/protocol/openid-connect/certs}
+server.port: ${MARKETPLACE_SERVICE_PORT:8099}
+management:
+  endpoints.web.exposure.include: health,info
+  endpoint.health.probes.enabled: true

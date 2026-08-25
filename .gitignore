@@ -1,0 +1,53 @@
+# OS and editor files
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.cache
+.eslintcache
+.stylelintcache
+
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+!.env.template
+*.key
+*.pem
+*.crt
+secrets/
+credentials/
+
+# Node / frontend
+node_modules/
+.pnpm-store/
+.pnpm-debug.log*
+dist/
+build/
+coverage/
+.vite/
+.turbo/
+.parcel-cache/
+.next/
+.nuxt/
+
+# Java / backend
+target/
+build-output/
+.m2-local/
+*.class
+.mvn/wrapper/maven-wrapper.jar
+
+# Infrastructure / tooling
+.terraform/
+terraform.tfstate
+terraform.tfstate.*
+crash.log

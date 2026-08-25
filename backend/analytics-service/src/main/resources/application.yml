@@ -1,0 +1,27 @@
+spring:
+  application.name: analytics-service
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/platform}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    hikari:
+      connection-init-sql: SET search_path TO analytics
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:3}
+      minimum-idle: ${DB_POOL_MIN_IDLE:0}
+  flyway:
+    enabled: true
+    table: analytics_flyway_schema_history
+    schemas: analytics
+    default-schema: analytics
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: analytics-service
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+  security.oauth2.resourceserver.jwt.issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/platform}
+  security.oauth2.resourceserver.jwt.jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/platform}/protocol/openid-connect/certs}
+server.port: ${ANALYTICS_SERVICE_PORT:8093}
+management:
+  endpoints.web.exposure.include: ${MANAGEMENT_ENDPOINTS:health,info}
+  endpoint.health.probes.enabled: true

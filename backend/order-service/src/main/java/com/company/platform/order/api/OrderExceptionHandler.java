@@ -1,0 +1,4 @@
+package com.company.platform.order.api;
+
+import org.springframework.http.*; import org.springframework.web.bind.annotation.*; import java.util.*;
+@RestControllerAdvice public class OrderExceptionHandler { @ExceptionHandler(NoSuchElementException.class) ResponseEntity<Map<String,String>> notFound(Exception e){return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("code","ORDER_NOT_FOUND","message",e.getMessage()));} @ExceptionHandler(IllegalArgumentException.class) ResponseEntity<Map<String,String>> bad(Exception e){return ResponseEntity.badRequest().body(Map.of("code","INVALID_ORDER","message",e.getMessage()));} @ExceptionHandler(IllegalStateException.class) ResponseEntity<Map<String,String>> state(Exception e){return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("code",e.getMessage()==null?"ORDER_INVALID_STATE":e.getMessage(),"message",e.getMessage()==null?"invalid order state":e.getMessage()));} }

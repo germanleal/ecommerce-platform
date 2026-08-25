@@ -1,0 +1,3 @@
+package com.company.platform.inventory.domain;
+import java.math.BigDecimal;import java.time.Instant;import java.util.UUID;
+public record PickingTask(UUID id,UUID tenantId,UUID fulfillmentId,UUID inventoryId,BigDecimal quantity,String warehouseLocation,UUID operatorId,PickingStatus status,Instant pickedAt){public PickingTask{if(tenantId==null||fulfillmentId==null||inventoryId==null||operatorId==null||quantity==null||quantity.signum()<=0)throw new IllegalArgumentException("invalid picking task");}public PickingTask complete(){if(status!=PickingStatus.IN_PROGRESS)throw new IllegalStateException("picking task is not active");return new PickingTask(id,tenantId,fulfillmentId,inventoryId,quantity,warehouseLocation,operatorId,PickingStatus.COMPLETED,Instant.now());}}

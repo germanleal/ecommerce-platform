@@ -1,0 +1,6 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Development placeholders and documentation examples"
+paths = ['''\.env\.example$''', '''infrastructure/security/''']

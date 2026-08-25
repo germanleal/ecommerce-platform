@@ -1,0 +1,1 @@
+package com.company.platform.integration.framework;import java.util.*;public record AdapterContext(UUID tenantId,UUID connectorId,UUID correlationId,String provider,String version){public AdapterContext{Objects.requireNonNull(tenantId);Objects.requireNonNull(connectorId);Objects.requireNonNull(correlationId);}}

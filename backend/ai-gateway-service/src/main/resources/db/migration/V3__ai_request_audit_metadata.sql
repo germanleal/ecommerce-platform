@@ -1,0 +1,6 @@
+ALTER TABLE ai_audit ADD COLUMN IF NOT EXISTS user_id UUID;
+ALTER TABLE ai_audit ADD COLUMN IF NOT EXISTS provider VARCHAR(128);
+ALTER TABLE ai_audit ADD COLUMN IF NOT EXISTS model VARCHAR(128);
+ALTER TABLE ai_audit ADD COLUMN IF NOT EXISTS status VARCHAR(32);
+ALTER TABLE ai_audit ADD COLUMN IF NOT EXISTS latency_ms BIGINT;
+CREATE INDEX IF NOT EXISTS idx_ai_audit_tenant_status ON ai_audit(tenant_id,status,created_at);

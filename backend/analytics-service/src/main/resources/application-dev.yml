@@ -1,0 +1,4 @@
+spring:
+  config.activate.on-profile: dev
+logging.level.root: ${LOG_LEVEL:INFO}
+management.endpoints.web.exposure.include: health,info,metrics

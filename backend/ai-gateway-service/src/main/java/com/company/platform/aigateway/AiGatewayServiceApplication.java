@@ -1,0 +1,1 @@
+package com.company.platform.aigateway;import org.springframework.boot.SpringApplication;import org.springframework.boot.autoconfigure.SpringBootApplication;@SpringBootApplication public class AiGatewayServiceApplication{public static void main(String[]a){SpringApplication.run(AiGatewayServiceApplication.class,a);}}

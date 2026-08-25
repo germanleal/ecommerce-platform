@@ -1,0 +1,10 @@
+package com.company.platform.commerce.domain.product;
+import java.time.Instant; import java.util.UUID;
+public final class SellableProduct {
+ private final UUID id,tenantId,marketplaceProductId,storeId; private SellableProductStatus status; private final Instant createdAt; private Instant updatedAt;
+ private SellableProduct(UUID id,UUID tenantId,UUID marketplaceProductId,UUID storeId,SellableProductStatus status,Instant createdAt,Instant updatedAt){if(tenantId==null||marketplaceProductId==null||storeId==null)throw new IllegalArgumentException("ownership required");this.id=id==null?UUID.randomUUID():id;this.tenantId=tenantId;this.marketplaceProductId=marketplaceProductId;this.storeId=storeId;this.status=status==null?SellableProductStatus.DISABLED:status;this.createdAt=createdAt==null?Instant.now():createdAt;this.updatedAt=updatedAt==null?this.createdAt:updatedAt;}
+ private SellableProduct(UUID tenantId,UUID marketplaceProductId,UUID storeId){this(null,tenantId,marketplaceProductId,storeId,null,null,null);}
+ public static SellableProduct create(UUID tenantId,UUID marketplaceProductId,UUID storeId){return new SellableProduct(tenantId,marketplaceProductId,storeId);} public void enable(){status=SellableProductStatus.ENABLED;touch();} public void disable(){status=SellableProductStatus.DISABLED;touch();} public void suspend(){status=SellableProductStatus.SUSPENDED;touch();}
+ public static SellableProduct rehydrate(UUID id,UUID tenantId,UUID marketplaceProductId,UUID storeId,SellableProductStatus status,Instant createdAt,Instant updatedAt){return new SellableProduct(id,tenantId,marketplaceProductId,storeId,status,createdAt,updatedAt);}
+ private void touch(){updatedAt=Instant.now();} public UUID id(){return id;} public UUID tenantId(){return tenantId;} public UUID marketplaceProductId(){return marketplaceProductId;} public UUID storeId(){return storeId;} public SellableProductStatus status(){return status;} public Instant createdAt(){return createdAt;} public Instant updatedAt(){return updatedAt;}
+}

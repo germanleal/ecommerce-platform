@@ -1,0 +1,3 @@
+package com.company.platform.order.infrastructure;
+import com.company.platform.order.domain.events.OrderEvent;import org.springframework.kafka.core.KafkaTemplate;import org.springframework.stereotype.Component;import java.time.Instant;import java.util.*;
+@Component public class KafkaCheckoutEventPublisher{private final KafkaTemplate<String,Object> kafka;public KafkaCheckoutEventPublisher(KafkaTemplate<String,Object> k){kafka=k;}public void publish(String type,UUID aggregate,UUID tenant){kafka.send("checkout.events",aggregate.toString(),new OrderEvent(UUID.randomUUID(),type,aggregate,tenant,Instant.now(),Map.of("version","1")));}}

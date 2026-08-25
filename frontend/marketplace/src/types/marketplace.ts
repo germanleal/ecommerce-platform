@@ -1,0 +1,12 @@
+export type ProductStatus = 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
+export type StoreStatus = 'CREATED' | 'CONFIGURED' | 'ACTIVE' | 'SUSPENDED' | 'CLOSED';
+export type Store = { id: string; tenantId: string; name: string; slug: string; description?: string; logoUrl?: string; status: StoreStatus };
+export type Category = { id: string; name: string; description?: string; status?: string };
+export type Price = { amount: number; currency: string };
+export type Product = { id: string; tenantId: string; tenant_id?: string; storeId: string; store_id?: string; catalogId: string; categoryId?: string; sku: string; name: string; description?: string; status: ProductStatus; price?: Price; imageUrl?: string; available?: boolean; category?: Category; category_name?: string; store_name?: string; amount?: number; net_price?: number; final_price?: number; tax_rate?: number; tax_amount?: number; currency?: string; image_url?: string };
+export type CartItem = { id: string; productId: string; name: string; quantity: number; unitPrice: number; currency: string };
+export type Cart = { id?: string; items: CartItem[]; subtotal?: Price };
+export type PurchaseOrderLine = { id: string; sellableProductId: string; productSnapshot: string; quantity: number; unitPrice: { amount: number; currency: string }; subtotal: { amount: number; currency: string } };
+export type PurchaseOrder = { id: string; purchaseId: string; orderNumber: string; tenantId: string; customerId: string; storeId: string; status: string; currency: string; subtotal: number; total: number; lines: PurchaseOrderLine[]; createdAt?: string; updatedAt?: string };
+export type ApiError = { status: number; message: string; correlationId?: string };
+export type Tenant = { id: string; name: string };

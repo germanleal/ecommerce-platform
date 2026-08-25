@@ -1,0 +1,3 @@
+package com.company.platform.shared.security;
+import static org.junit.jupiter.api.Assertions.*;import java.time.Instant;import java.util.Map;import org.junit.jupiter.api.Test;import org.springframework.security.oauth2.jwt.Jwt;
+class PlatformJwtAuthenticationConverterTest{@Test void convertsRealmRoles(){var jwt=Jwt.withTokenValue("t").header("alg","none").claim("sub","u").claim("realm_access",Map.of("roles",java.util.List.of("USER"))).issuedAt(Instant.now()).expiresAt(Instant.now().plusSeconds(60)).build();var token=new PlatformJwtAuthenticationConverter().convert(jwt);assertTrue(token.getAuthorities().stream().anyMatch(a->a.getAuthority().equals("ROLE_USER")));}}

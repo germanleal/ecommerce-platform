@@ -1,0 +1,3 @@
+package com.company.platform.order.application;
+import java.math.BigDecimal;import java.util.*;
+public interface CommerceCheckoutPort{ShoppingCart loadCart(UUID tenantId,UUID cartId);CommercialPrice activePrice(UUID tenantId,UUID productId);void completeCart(UUID tenantId,UUID cartId);record ShoppingCart(UUID id,UUID tenantId,UUID customerId,UUID storeId,String status,List<CartLine> items){}record CartLine(UUID productId,String productName,String sku,int quantity,BigDecimal amount,String currency){}record CommercialPrice(UUID productId,String productName,String sku,BigDecimal amount,String currency,boolean active,boolean enabled){} }
