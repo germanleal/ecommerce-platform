@@ -26,8 +26,10 @@ const orderClient = axios.create({ baseURL: import.meta.env.VITE_ORDER_API_URL ?
 orderClient.interceptors.request.use((config) => { config.headers = config.headers ?? {}; config.headers['X-Correlation-Id'] ??= crypto.randomUUID(); const token = useAuthStore.getState().accessToken; if (token) config.headers.Authorization = `Bearer ${token}`; return config; });
 export const orderApi = {
   create: (body: { storeId: string; currency: string; lines: Array<{ productId: string; quantity: number }> }) => orderClient.post<PurchaseOrder>('', body),
-  createMarketplace: (body: { tenantId: string; storeId: string; currency: string; lines: Array<{ productId: string; quantity: number }> }) => orderClient.post<PurchaseOrder>('/marketplace', body),
-  get: (id: string) => orderClient.get<PurchaseOrder>(`/${id}`)
+  createMarketplace: (body: { purchaseId: string; tenantId: string; storeId: string; currency: string; lines: Array<{ productId: string; quantity: number }> }) => orderClient.post<PurchaseOrder>('/marketplace', body),
+  get: (id: string) => orderClient.get<PurchaseOrder>(`/${id}`),
+  management: (tenantId: string, status?: string) => orderClient.get<PurchaseOrder[]>('/management', { params: { tenantId, ...(status ? { status } : {}) } }),
+  managementAction: (tenantId: string, id: string, action: 'confirm' | 'start-processing' | 'complete' | 'cancel') => orderClient.post<PurchaseOrder>(`/management/${id}/${action}`, undefined, { params: { tenantId } })
 };
 
 export type Organization = { id: string; name: string; slug: string; status: string; created_at?: string; updated_at?: string };
@@ -40,7 +42,7 @@ adminClient.interceptors.response.use((response) => response, (error) => { if (a
 const integrationsClient = axios.create({ baseURL: import.meta.env.VITE_INTEGRATION_API_URL ?? '/integration-api', timeout: 10000 });
 integrationsClient.interceptors.request.use((config) => { config.headers = config.headers ?? {}; const token = useAuthStore.getState().accessToken; if (token) config.headers.Authorization = `Bearer ${token}`; config.headers['X-Correlation-Id'] ??= crypto.randomUUID(); return config; });
 const analyticsClient = axios.create({ baseURL: import.meta.env.VITE_ANALYTICS_API_URL ?? '/analytics-api', timeout: 10000 });
-analyticsClient.interceptors.request.use((config) => { config.headers = config.headers ?? {}; const token = useAuthStore.getState().accessToken; if (token) config.headers.Authorization = `Bearer ${token}`; return config; });
+analyticsClient.interceptors.request.use((config) => { config.headers = config.headers ?? {}; const token = useAuthStore.getState().accessToken; if (token) config.headers.Authorization = `Bearer ${token}`; const tenantId = sessionStorage.getItem('active_tenant'); if (tenantId) config.headers['X-Tenant-Id'] = tenantId; return config; });
 export const adminApi = {
   organizations: () => adminClient.get<Organization[]>('/organizations'), createOrganization: (body: { name: string; slug: string }) => adminClient.post<Organization>('/organizations', body), updateOrganization: (id: string, body: { name: string; slug: string }) => adminClient.put<Organization>(`/organizations/${id}`, body),
   tenants: () => adminClient.get<AdminTenant[]>('/tenants'), tenant: (id: string) => adminClient.get<AdminTenant>(`/tenants/${id}`), createTenant: (body: { organizationId: string; name: string; slug: string; ownerId?: string; configuration: Record<string, unknown> }) => adminClient.post<AdminTenant>('/tenants', body), updateTenant: (id: string, body: { name: string; slug: string; configuration: Record<string, unknown> }) => adminClient.put<AdminTenant>(`/tenants/${id}`, body), changeTenantStatus: (id: string, status: string) => adminClient.patch<AdminTenant>(`/tenants/${id}/status`, { status }),
